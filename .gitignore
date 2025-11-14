@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyd
+*.dll
+*.pt
+*.bin
+*.sqlite3
+chroma_db/
+.env
