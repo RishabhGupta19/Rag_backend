@@ -14,6 +14,5 @@ chromadb==0.4.22
 sentence-transformers==2.6.1
 pypdf==4.2.0
 
-huggingface-hub==0.21.4
-transformers==4.37.2
+
 google-generativeai==0.4.1
