@@ -1,19 +1,26 @@
-# --- Core LangChain and dependencies ---
-langchain>=0.2.0
-chromadb>=0.5.0
-tiktoken>=0.7.0
+# --- FastAPI Backend ---
+fastapi
+uvicorn
+pydantic
+python-dotenv
 
-# --- Embeddings ---
-sentence-transformers>=3.0.0
-transformers>=4.40.0
-torch>=2.2.0
+# --- LangChain + RAG Core ---
+langchain
+langchain-community
+langchain-core
+langchain-text-splitters
+langchain-classic
+langchain-google-genai
+langchain-huggingface
 
-# --- PDF loading support (optional but useful) ---
-pypdf>=4.2.0
+# --- Embeddings + Vector Store ---
+chromadb
+sentence-transformers
 
-# --- Google Gemini API SDK ---
-google-genai>=0.3.0
+# --- PDF Support ---
+pypdf
 
-# --- General utilities ---
-numpy>=1.26.0
-typing-extensions>=4.10.0
+# --- Utils ---
+huggingface-hub
+transformers
+google-generativeai
