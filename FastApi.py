@@ -41,7 +41,13 @@ class QueryRequest(BaseModel):
     question: str
     
 # --- 4. Endpoint ---
+@app.get("/")
+async def root():
+    return {"message": "Server is running"}
 @app.post("/query")
+
+
+
 async def query_rag_pipeline(request: QueryRequest):
     """Accepts a question and uses the initialized RAG chain to get the answer."""
     
