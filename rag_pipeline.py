@@ -204,68 +204,99 @@
 
 # if __name__ == "__main__":
 #     main()
+# new code 
+
 import os
 from pathlib import Path
 from dotenv import load_dotenv
 import sys
 from typing import Optional
+import time
 
 # --- LangChain and RAG Imports ---
-from langchain_community.vectorstores import Chroma
+from langchain_pinecone import PineconeVectorStore
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.prompts import PromptTemplate
 from langchain_classic.chains import RetrievalQA
 from langchain_google_genai import ChatGoogleGenerativeAI
+from pinecone import Pinecone, ServerlessSpec
 
 # --- Configuration & Global Variables ---
 load_dotenv()
 DATA_DIR = Path("data")
-CHROMA_DIR = "chroma_db"
-EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyDVhVk8IuSARft3CRZe7i-hymM7ttIF0lc") 
 
-# Global variable for the embedding function (initialized once)
+# Pinecone Configuration
+PINECONE_API_KEY = os.getenv("PINECONE_API_KEY", "pcsk_4Lzxs9_GeePRj7CRLTJm2u8abEkqfR691awvjG2reqHvP9iYiSAphptZKJG2VcQfKSBiDF")
+PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "rishabh-portfolio")
+PINECONE_ENVIRONMENT = os.getenv("PINECONE_ENVIRONMENT", "us-east-1")
+
+# CRITICAL FIX: Set environment variable so langchain-pinecone can access it
+os.environ["PINECONE_API_KEY"] = PINECONE_API_KEY
+
+# Embedding Model Configuration
+EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+EMBEDDING_DIMENSION = 384
+
+# Google API Key
+API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyDVhVk8IuSARft3CRZe7i-hymM7ttIF0lc")
+
+# Global variables
 HF_EMBEDDING_FUNCTION: Optional[HuggingFaceEmbeddings] = None
+PINECONE_CLIENT: Optional[Pinecone] = None
 
 # --- Core RAG Functions ---
 
 def load_text_files(data_dir: Path):
+    """Load text files."""
     docs = []
     for p in data_dir.glob("**/*"):
         if p.is_file() and p.suffix.lower() in {".txt", ".md"}:
-            text = p.read_text(encoding="utf-8", errors="ignore")
-            docs.append(Document(page_content=text, metadata={"source": str(p)}))
+            try:
+                text = p.read_text(encoding="utf-8", errors="ignore")
+                docs.append(Document(page_content=text, metadata={"source": str(p)}))
+            except Exception as e:
+                print(f"⚠️ Could not read {p.name}: {e}", file=sys.stderr)
     return docs
 
 def load_pdfs(data_dir: Path):
+    """Load PDFs."""
     docs = []
     try:
         import pypdf
     except ImportError:
-        print("⚠️ Please install pypdf to load PDFs: pip install pypdf", file=sys.stderr)
+        print("⚠️ pypdf not installed. Skipping PDFs.", file=sys.stderr)
         return docs
 
     for p in data_dir.glob("**/*.pdf"):
         if p.is_file():
             try:
                 reader = pypdf.PdfReader(str(p))
-                text = "\n".join(page.extract_text() or "" for page in reader.pages)
+                text_parts = []
+                for page in reader.pages:
+                    text_parts.append(page.extract_text() or "")
+                text = "\n".join(text_parts)
                 docs.append(Document(page_content=text, metadata={"source": str(p)}))
+                del text_parts
             except Exception as e:
                 print(f"⚠️ Could not read PDF {p.name}: {e}", file=sys.stderr)
                 continue
     return docs
 
 def ingest_documents(data_dir: Path):
+    """Ingest documents."""
+    print(f"📂 Loading documents from {data_dir}...")
     docs = load_text_files(data_dir) + load_pdfs(data_dir)
     print(f"✅ Loaded {len(docs)} documents.")
     return docs
 
 def chunk_documents(docs, chunk_size=500, chunk_overlap=50):
+    """Split documents into chunks."""
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=chunk_size, chunk_overlap=chunk_overlap
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        length_function=len,
     )
     chunks = []
     for doc in docs:
@@ -273,54 +304,115 @@ def chunk_documents(docs, chunk_size=500, chunk_overlap=50):
             meta = dict(doc.metadata)
             meta["chunk_index"] = i
             chunks.append(Document(page_content=chunk, metadata=meta))
+
     print(f"✅ Split into {len(chunks)} chunks.")
     return chunks
 
-def create_embeddings_and_store(chunks, persist_dir: str):
-    # Uses the globally initialized HF_EMBEDDING_FUNCTION
-    global HF_EMBEDDING_FUNCTION
+def initialize_pinecone():
+    """Initialize Pinecone client and ensure index exists."""
+    global PINECONE_CLIENT
+    
+    print(f"🔌 Connecting to Pinecone...")
+    
+    try:
+        # Initialize Pinecone client
+        PINECONE_CLIENT = Pinecone(api_key=PINECONE_API_KEY)
+        
+        # Check if index exists
+        existing_indexes = [index.name for index in PINECONE_CLIENT.list_indexes()]
+        
+        if PINECONE_INDEX_NAME not in existing_indexes:
+            print(f"📊 Creating new Pinecone index: {PINECONE_INDEX_NAME}")
+            
+            # Create index with serverless spec (free tier)
+            PINECONE_CLIENT.create_index(
+                name=PINECONE_INDEX_NAME,
+                dimension=EMBEDDING_DIMENSION,
+                metric="cosine",
+                spec=ServerlessSpec(
+                    cloud="aws",
+                    region=PINECONE_ENVIRONMENT
+                )
+            )
+            
+            # Wait for index to be ready
+            print("⏳ Waiting for index to be ready...")
+            time.sleep(10)
+            print(f"✅ Index '{PINECONE_INDEX_NAME}' created successfully!")
+        else:
+            print(f"✅ Found existing index: {PINECONE_INDEX_NAME}")
+            
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error initializing Pinecone: {e}", file=sys.stderr)
+        return False
+
+def create_or_load_vectorstore():
+    """Create or load Pinecone vector store."""
+    global HF_EMBEDDING_FUNCTION, PINECONE_CLIENT
+    
     if not HF_EMBEDDING_FUNCTION:
         raise RuntimeError("Embedding function not initialized.")
-        
-    vectordb = Chroma.from_documents(chunks, embedding=HF_EMBEDDING_FUNCTION, persist_directory=persist_dir)
-    print(f"✅ Vector store ready in {persist_dir}")
-    return vectordb
-
-def should_reindex(data_dir: Path, chroma_dir: str) -> bool:
-    """Checks if any file in data_dir is newer than the Chroma DB directory."""
-    chroma_path = Path(chroma_dir)
     
-    if not chroma_path.exists() or not os.listdir(chroma_path):
-        print("💡 Chroma DB not found or is empty. Indexing is required.")
-        return True
-
+    if not PINECONE_CLIENT:
+        raise RuntimeError("Pinecone client not initialized.")
+    
     try:
-        db_mtime = chroma_path.stat().st_mtime
-    except FileNotFoundError:
-        print("💡 Chroma DB directory not found. Indexing is required.")
-        return True
-
-    source_files = [p for p in data_dir.glob("**/*") if p.is_file() and p.suffix.lower() in {".txt", ".md", ".pdf"}]
-    
-    if not source_files:
-        print("⚠️ No source documents found. Skipping indexing.")
-        return False
+        # Get the index
+        index = PINECONE_CLIENT.Index(PINECONE_INDEX_NAME)
         
-    for p in source_files:
-        try:
-            if p.stat().st_mtime > db_mtime:
-                print(f"🔄 Document '{p.name}' is newer than the DB. Re-indexing...")
-                return True
-        except FileNotFoundError:
-            continue
+        # Check if index has vectors
+        stats = index.describe_index_stats()
+        vector_count = stats.get('total_vector_count', 0)
+        
+        print(f"📊 Index stats: {vector_count} vectors")
+        
+        if vector_count == 0:
+            print("📤 Index is empty. Uploading documents...")
+            
+            # Load and process documents
+            docs = ingest_documents(DATA_DIR)
+            if not docs:
+                print("⚠️ No documents to index.")
+                return None
+            
+            chunks = chunk_documents(docs)
+            
+            # Create vectorstore and upload to Pinecone
+            # Environment variable is already set above, so no need to pass it here
+            print(f"⬆️ Uploading {len(chunks)} chunks to Pinecone...")
+            vectorstore = PineconeVectorStore.from_documents(
+                documents=chunks,
+                embedding=HF_EMBEDDING_FUNCTION,
+                index_name=PINECONE_INDEX_NAME
+            )
+            print("✅ Documents uploaded to Pinecone!")
+            
+        else:
+            print("📥 Loading existing vectors from Pinecone...")
+            # Connect to existing vectorstore
+            vectorstore = PineconeVectorStore(
+                index_name=PINECONE_INDEX_NAME,
+                embedding=HF_EMBEDDING_FUNCTION
+            )
+            print("✅ Connected to existing Pinecone vectorstore!")
+        
+        return vectorstore
+        
+    except Exception as e:
+        print(f"❌ Error with Pinecone vectorstore: {e}", file=sys.stderr)
+        import traceback
+        print(f"Full traceback:\n{traceback.format_exc()}", file=sys.stderr)
+        return None
 
-    print("✅ No changes detected in source documents. Skipping ingestion/indexing.")
-    return False
+def make_retrieval_qa(vectorstore):
+    """Create the QA chain."""
+    retriever = vectorstore.as_retriever(
+        search_type="similarity",
+        search_kwargs={"k": 3}
+    )
 
-def make_retrieval_qa(vectordb: Chroma):
-    retriever = vectordb.as_retriever(search_type="similarity", search_kwargs={"k": 4})
-    
-    # *** UPDATED PROMPT FOR RISHABH'S PERSONA ***
     prompt = PromptTemplate(
         input_variables=["context", "question"],
         template=(
@@ -350,49 +442,52 @@ def make_retrieval_qa(vectordb: Chroma):
         chain_type="stuff",
         retriever=retriever,
         chain_type_kwargs={"prompt": prompt},
-        return_source_documents=True, 
+        return_source_documents=True,
     )
     return qa_chain
 
-
 def initialize_rag_chain():
-    """Performs conditional indexing/loading and returns the fully initialized QA chain."""
+    """Initialize the complete RAG chain with Pinecone."""
     global HF_EMBEDDING_FUNCTION
 
-    # 1. Load Embedding Model (Optimization)
+    print("=" * 60)
+    print("🚀 Initializing RAG Pipeline (Pinecone Cloud)")
+    print("=" * 60)
+
+    # 1. Load Embedding Model
     print(f"⌛ Loading embedding model: {EMBEDDING_MODEL}...")
     try:
-        HF_EMBEDDING_FUNCTION = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
+        HF_EMBEDDING_FUNCTION = HuggingFaceEmbeddings(
+            model_name=EMBEDDING_MODEL,
+            model_kwargs={'device': 'cpu'},
+            encode_kwargs={'normalize_embeddings': True}
+        )
         print("✅ Embedding model loaded.")
     except Exception as e:
         print(f"❌ FATAL: Could not load embedding model. Error: {e}", file=sys.stderr)
-        return None # Return None on failure
+        return None
 
-    # 2. Conditional RAG Initialization
-    if should_reindex(DATA_DIR, CHROMA_DIR):
-        print("\n*** Starting Indexing Process ***")
-        docs = ingest_documents(DATA_DIR)
-        if not docs:
-            print("⚠️ No documents to index. RAG will not work.")
-            return None
+    # 2. Initialize Pinecone
+    if not initialize_pinecone():
+        print("❌ FATAL: Could not initialize Pinecone.", file=sys.stderr)
+        return None
 
-        chunks = chunk_documents(docs)
-        vectordb = create_embeddings_and_store(chunks, CHROMA_DIR)
-        print("*** Indexing Complete ***\n")
-    else:
-        print("\n*** Loading Existing Vector Store ***")
-        try:
-            # Use the already loaded HF_EMBEDDING_FUNCTION for fast loading
-            vectordb = Chroma(persist_directory=CHROMA_DIR, embedding_function=HF_EMBEDDING_FUNCTION)
-            print(f"✅ Loaded existing vector store from {CHROMA_DIR}.")
-            print("*** Loading Complete ***\n")
-        except Exception as e:
-            print(f"❌ Error loading existing vector store: {e}", file=sys.stderr)
-            print("⚠️ Delete 'chroma_db' folder and rerun to force re-index.")
-            return None
-            
-    # 3. Create and return the QA Chain
-    return make_retrieval_qa(vectordb)
+    # 3. Create or Load Vectorstore
+    vectorstore = create_or_load_vectorstore()
+    if not vectorstore:
+        print("❌ FATAL: Could not create/load vectorstore.", file=sys.stderr)
+        return None
 
-# The initialized chain will be stored here and accessed by rag_api.py
+    # 4. Create QA Chain
+    print("🔗 Creating QA Chain...")
+    qa_chain = make_retrieval_qa(vectorstore)
+    print("✅ QA Chain ready!")
+
+    print("=" * 60)
+    print("✅ RAG Pipeline Initialization Complete")
+    print("=" * 60)
+
+    return qa_chain
+
+# Initialize the chain
 QA_CHAIN = initialize_rag_chain()
