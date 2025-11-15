@@ -89,11 +89,12 @@
 
 
 import os
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import sys
 from pathlib import Path
+import asyncio
 
 # --- 1. FastAPI Initialization (MOVED UP) ---
 # Initialize FastAPI FIRST so the port binding happens immediately
@@ -117,38 +118,49 @@ app.add_middleware(
 # --- 2. Global Variables for RAG Components ---
 QA_CHAIN = None
 API_KEY = None
+LOADING_STATUS = "not_started"  # Possible values: not_started, loading, loaded, failed
 
-# --- 3. Startup Event - Load RAG Pipeline AFTER Server Starts ---
-@app.on_event("startup")
-async def load_rag_pipeline():
-    """Load the RAG pipeline after FastAPI has bound to the port."""
-    global QA_CHAIN, API_KEY
+# --- 3. Background RAG Loading Function ---
+def load_rag_pipeline_sync():
+    """Load the RAG pipeline in the background."""
+    global QA_CHAIN, API_KEY, LOADING_STATUS
     
-    print("🚀 Server starting... Loading RAG pipeline...")
+    LOADING_STATUS = "loading"
+    print("🔄 Loading RAG pipeline in background...")
     
     try:
         from rag_pipeline import QA_CHAIN as _QA_CHAIN, API_KEY as _API_KEY
         QA_CHAIN = _QA_CHAIN
         API_KEY = _API_KEY
+        LOADING_STATUS = "loaded"
         print("✅ RAG pipeline loaded successfully!")
     except ImportError as e:
-        print(f"⚠️ WARNING: Could not import rag_pipeline. Ensure 'rag_pipeline.py' is in the same directory. Error: {e}", file=sys.stderr)
-        print("⚠️ Server will run but /query endpoint will return 503", file=sys.stderr)
+        LOADING_STATUS = "failed"
+        print(f"❌ ERROR: Could not import rag_pipeline. Error: {e}", file=sys.stderr)
     except Exception as e:
-        print(f"⚠️ WARNING: Error during RAG pipeline initialization: {e}", file=sys.stderr)
-        print("⚠️ Server will run but /query endpoint will return 503", file=sys.stderr)
+        LOADING_STATUS = "failed"
+        print(f"❌ ERROR: Error during RAG pipeline initialization: {e}", file=sys.stderr)
 
-# --- 4. Request Model ---
+# --- 4. Startup Event - Trigger Background Loading ---
+@app.on_event("startup")
+async def startup_event():
+    """Trigger RAG pipeline loading in background without blocking startup."""
+    print("🚀 Server started! Initiating RAG pipeline loading in background...")
+    # Start loading in a separate thread/task
+    asyncio.create_task(asyncio.to_thread(load_rag_pipeline_sync))
+
+# --- 5. Request Model ---
 class QueryRequest(BaseModel):
     """Schema for the incoming user query."""
     question: str
     
-# --- 5. Endpoints ---
+# --- 6. Endpoints ---
 @app.get("/")
 async def root():
     """Health check endpoint - responds immediately."""
     return {
         "message": "Server is running",
+        "rag_status": LOADING_STATUS,
         "rag_initialized": QA_CHAIN is not None
     }
 
@@ -157,24 +169,46 @@ async def health():
     """Health check for load balancers."""
     return {
         "status": "healthy",
-        "rag_available": QA_CHAIN is not None
+        "rag_status": LOADING_STATUS
+    }
+
+@app.get("/status")
+async def status():
+    """Detailed status endpoint."""
+    return {
+        "server": "running",
+        "rag_pipeline": {
+            "status": LOADING_STATUS,
+            "available": QA_CHAIN is not None
+        }
     }
 
 @app.post("/query")
 async def query_rag_pipeline(request: QueryRequest):
     """Accepts a question and uses the initialized RAG chain to get the answer."""
     
+    if LOADING_STATUS == "loading":
+        raise HTTPException(
+            status_code=503, 
+            detail="RAG service is still loading. Please try again in a moment."
+        )
+    
+    if LOADING_STATUS == "failed":
+        raise HTTPException(
+            status_code=503, 
+            detail="RAG service failed to initialize. Please check server logs."
+        )
+    
     if QA_CHAIN is None:
         raise HTTPException(
             status_code=503, 
-            detail="RAG service is not initialized or failed to load vector store. Please check server logs."
+            detail="RAG service is not initialized. Please check server logs."
         )
          
     if not API_KEY or API_KEY == "AIzaSyDVhVk8IuSARft3CRZe7i-hymM7ttIF0lc":
-        # In a production scenario, you might deny service here, but for development
-        print("❌ WARNING: API Key issue detected. Attempting to proceed...", file=sys.stderr)
+        print("⚠️ WARNING: API Key issue detected. Attempting to proceed...", file=sys.stderr)
     
-    print(f"Received query: {request.question}")
+    print(f"📥 Received query: {request.question}")
     
     try:
         # Use the global QA_CHAIN (LangChain RAG)
@@ -191,7 +225,10 @@ async def query_rag_pipeline(request: QueryRequest):
             }
             for doc in result.get('source_documents', [])
         ]
+        
+        print(f"✅ Query processed successfully")
         return {"answer": answer, "sources": sources}
+        
     except Exception as e:
-        print(f"An unexpected error occurred during RAG query: {e}", file=sys.stderr)
+        print(f"❌ Error during RAG query: {e}", file=sys.stderr)
         raise HTTPException(status_code=500, detail=f"Internal RAG Chain Error: {str(e)}")
