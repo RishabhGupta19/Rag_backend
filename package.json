@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx server.ts",
-    "start": "node server.js",
-    "build": "echo 'No build required'"
-  },
+  "dev": "tsx server.ts",
+  "build": "tsc",
+  "start": "node dist/server.js"
+},
+
   "dependencies": {
     "@huggingface/inference": "2.8.1",
     "@langchain/community": "0.2.31",
