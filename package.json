@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "start": "npx tsx server.ts",
+    "start": "node server.js",
     "build": "echo 'No build required'"
   },
   "dependencies": {
