@@ -1,0 +1,135 @@
+RISHABH GUPTA – PROJECT PORTFOLIO CONTEXT FILE
+================================================
+
+PROJECT 1: Daily Drift – Blogging Platform
+------------------------------------------------
+Description:
+A full-stack blogging platform with complete CRUD functionality, JWT authentication, and a fully responsive UI.
+
+Key Features:
+- Create, read, update, delete blog posts
+- User authentication using JWT
+- Secure routing and access control
+- Server-side rendering with EJS
+- Fully responsive front-end
+
+Tech Stack:
+Node.js, Express.js, MongoDB, EJS, CSS
+
+Live Link:
+https://daily-drift.onrender.com/
+
+Timeline:
+Jan 2025 – Mar 2025
+
+
+PROJECT 2: AI Interview Prep
+------------------------------------------------
+Description:
+An AI-powered interview preparation platform that simulates job interviews by generating personalized questions from job descriptions. It evaluates user responses by comparing them with uploaded resumes using RAG.
+
+Key Features:
+- Gemini API for question generation
+- RAG pipeline for resume analysis
+- JWT authentication
+- Resume upload with Multer
+- Cloudinary file storage
+- PDF parsing for extracting resume data
+
+Tech Stack:
+Node.js, Express.js, MongoDB, Tailwind CSS, JWT, BcryptJS, Multer, PDF-Parse, Cloudinary, Gemini API, RAG
+
+Live Link:
+https://ai-interview-prep-bice-eight.vercel.app/
+
+Timeline:
+Oct 2025 – Oct 2025
+
+
+PROJECT 3: AI-Driven Learning Platform
+------------------------------------------------
+Description:
+A multilingual learning and video-based study platform with real-time translation and subtitles. Uses AssemblyAI for speech recognition and Google Translator API for multilingual support.
+
+Key Features:
+- AI-based speech transcription
+- Real-time subtitle generation
+- Multi-language translation
+- Video playback with text overlays
+
+Tech Stack:
+React, Node.js, Python, MongoDB, Assembly AI
+
+Live Link:
+http://ai-powered-video-platform.netlify.app/
+
+Timeline:
+Feb 2025 – Jun 2025
+
+
+PROJECT 4: Secret Chatting App
+------------------------------------------------
+Description:
+A real-time, private peer-to-peer chatting application. Users join private rooms via a 4-digit code. Messages stay local until the user disconnects, ensuring privacy.
+
+Key Features:
+- Real-time messaging with Socket.IO
+- Private chat rooms with unique codes
+- Messages stored locally until disconnect
+- Lightweight, fast UI
+
+Tech Stack:
+React, Node.js, Express.js, MongoDB, Socket.IO, CORS
+
+Live Link:
+https://secret-chatting-app.vercel.app/
+
+Timeline:
+Oct 2025 – Oct 2025
+
+
+PROJECT 5: Personal Expense Tracker (MERN)
+------------------------------------------------
+Description:
+A MERN-based personal expense tracker supporting CRUD operations, categorization, filters, sorting, and real-time statistics.
+
+Key Features:
+- Add, update, delete expenses
+- Category-based tracking
+- Sorting & filtering
+- Analytics dashboard
+- Fully responsive design
+
+Tech Stack:
+Node.js, Express.js, MongoDB, React, CSS, MERN, REST APIs
+
+Live Link:
+https://personal-expense-tracker-rouge-seven.vercel.app/
+
+Timeline:
+Aug 2025 – Sep 2025
+
+
+PROJECT 6: Hospital Management System
+------------------------------------------------
+Description:
+A complete doctor appointment booking system with Flask backend and MySQL database. Includes automated scheduling and clean UI.
+
+Key Features:
+- Patient–doctor appointment scheduling
+- MySQL-backed data storage
+- Admin control
+- Fully responsive UI
+
+Tech Stack:
+Python, Flask, MySQL, HTML, CSS, JavaScript
+
+Repository:
+https://github.com/RishabhGupta19/Doctor-appointment-System
+
+Timeline:
+Apr 2024 – Jun 2024
+
+================================================
+END OF PROJECTS CONTEXT FILE
+================================================
