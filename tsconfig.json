@@ -1,20 +1,15 @@
 {
   "compilerOptions": {
-    // ESSENTIAL FIXES FOR TS5096
-    "noEmit": true,                     // ← ADD THIS
-    "emitDeclarationOnly": false,
-
-    // ESM/TS COMPATIBILITY FIXES
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "allowImportingTsExtensions": true, // ← now allowed because of noEmit
-
-    // BASE CONFIGURATION
     "target": "ES2020",
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "strict": false,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "outDir": "./dist",          // ← ADD THIS: Output directory for compiled JS
+    "rootDir": "./src",          // ← ADD THIS: Source directory (if your files are in src)
+    "allowImportingTsExtensions": true
   },
-  "include": ["server.ts", "Rag.ts", "data/**/*"]
+  "include": ["src/**/*"]        // ← Update to include all source files
 }
