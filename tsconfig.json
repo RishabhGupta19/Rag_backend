@@ -1,13 +1,17 @@
 {
   "compilerOptions": {
-    "module": "ESNext",
-    "target": "ES2020",
-    "moduleResolution": "node",
+    // ------------------- ESSENTIAL ESM/TS FIXES -------------------
+    "module": "NodeNext", // Use NodeNext/Node16 for modern ESM support
+    "moduleResolution": "NodeNext", // Use NodeNext resolution rules
+    "allowImportingTsExtensions": true, // Allows imports like "./Rag.ts" in source files
     "outDir": "dist",
     "rootDir": ".",
+    
+    // ------------------- BASE CONFIGURATION -------------------
+    "target": "ES2020",
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "strict": false,
+    "strict": true, // Recommended to enable strict checks
     "skipLibCheck": true
   },
   "include": ["server.ts", "Rag.ts", "data/**/*"]
