@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { initializeRag } from "./Rag.ts";   // ✔ Correct import for TS + Render
+import { initializeRag } from "./Rag.ts";   // ⬅️ Make sure Rag.js exists (compiled from Rag.ts)
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(cors({ origin: "*" }));
 
 // -------------------- GLOBALS --------------------
-let RAG_CHAIN: any = null;
+let RAG_CHAIN = null;
 let LOADING_STATUS = "not_started"; 
 // values = "not_started" | "loading" | "loaded" | "failed"
 
@@ -74,6 +74,7 @@ app.post("/query", async (req, res) => {
 
     let result;
 
+    // Try chain.invoke or chain.call depending on chain type
     if (typeof RAG_CHAIN.invoke === "function") {
       result = await RAG_CHAIN.invoke({ input: question });
     } else if (typeof RAG_CHAIN.call === "function") {
@@ -82,22 +83,24 @@ app.post("/query", async (req, res) => {
       throw new Error("RAG chain has no invoke/call method");
     }
 
+    // Extract final text
     const answer =
       result.answer ||
       result.text ||
       result.output ||
       "I could not find the answer in your documents.";
 
+    // Extract source documents (if provided)
     const sources =
       (result.context || [])
-        .map((doc: any) => ({
+        .map(doc => ({
           source: doc.metadata?.source || "unknown",
           chunkIndex: doc.metadata?.chunkIndex
         }));
 
     return res.json({ answer, sources });
 
-  } catch (err: any) {
+  } catch (err) {
     console.error("❌ Error during query:", err);
     return res.status(500).json({ error: "Internal RAG error: " + err.message });
   }
