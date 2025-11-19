@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/server.js",
-    "dev": "tsx server.ts"
+    "dev": "tsx Rag.ts",
+    "start": "tsx server.ts",
+    "build": "echo 'No build required'"
   },
   "dependencies": {
     "@huggingface/inference": "2.8.1",
