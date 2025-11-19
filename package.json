@@ -8,7 +8,7 @@
     "dev": "tsx server.ts"
   },
   "dependencies": {
-    "@huggingface/inference": "^4.13.3",
+    "@huggingface/inference": "2.8.1",
     "@langchain/community": "0.2.31",
     "@langchain/core": "0.2.36",
     "@langchain/google-genai": "0.1.0",
