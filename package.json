@@ -9,7 +9,7 @@
 },
 
   "dependencies": {
-    "@huggingface/inference": "2.8.1",
+    "@huggingface/inference": "^4.13.3",
     "@langchain/community": "0.2.31",
     "@langchain/core": "0.2.36",
     "@langchain/google-genai": "0.1.0",
