@@ -1,23 +1,19 @@
 {
   "compilerOptions": {
-    // ------------------- ESSENTIAL FIXES FOR TS5096 -------------------
-    // Setting this to false allows TypeScript to output JS files (.js).
-    // This resolves the TS5096 error by telling the compiler what to emit.
-    "declaration": false, 
-    "emitDeclarationOnly": false, 
-    
-    // ------------------- ESM/TS COMPATIBILITY FIXES -------------------
-    "module": "NodeNext", 
+    // ESSENTIAL FIXES FOR TS5096
+    "noEmit": true,                     // ← ADD THIS
+    "emitDeclarationOnly": false,
+
+    // ESM/TS COMPATIBILITY FIXES
+    "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "allowImportingTsExtensions": true, 
-    
-    // ------------------- BASE CONFIGURATION -------------------
-    "outDir": "dist",
-    "rootDir": ".",
+    "allowImportingTsExtensions": true, // ← now allowed because of noEmit
+
+    // BASE CONFIGURATION
     "target": "ES2020",
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "strict": false, 
+    "strict": false,
     "skipLibCheck": true
   },
   "include": ["server.ts", "Rag.ts", "data/**/*"]
