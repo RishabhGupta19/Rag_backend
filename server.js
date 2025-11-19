@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { initializeRag } from "./Rag.ts";   // ⬅️ Make sure Rag.js exists (compiled from Rag.ts)
+import { initializeRag } from "./Rag.js";   // ⬅️ Make sure Rag.js exists (compiled from Rag.ts)
 import dotenv from "dotenv";
 
 dotenv.config();
