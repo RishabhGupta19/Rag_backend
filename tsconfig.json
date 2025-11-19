@@ -1,12 +1,14 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "target": "ES2020",
+    "moduleResolution": "node",
+    "outDir": "dist",
+    "rootDir": ".",
     "esModuleInterop": true,
+    "resolveJsonModule": true,
     "strict": false,
-    "skipLibCheck": true,
-    "outDir": "dist"
+    "skipLibCheck": true
   },
-  "include": ["*.ts", "**/*.ts"]
+  "include": ["server.ts", "Rag.ts", "data/**/*"]
 }
