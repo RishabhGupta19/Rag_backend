@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { initializeRag } from "./Rag";   // ✔ Correct import for TS + Render
+import { initializeRag } from "./Rag.ts";   // ✔ Correct import for TS + Render
 import dotenv from "dotenv";
 
 dotenv.config();
