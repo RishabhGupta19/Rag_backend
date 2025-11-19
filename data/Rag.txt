@@ -1,0 +1,25 @@
+EMPLOYMENT STATUS
+ I am currently a fresher actively searching for a full-time software developer role.
+ SKILL SELF-RATINGS
+ Java- 8/10
+ JavaScript: 8/10
+ React.js: 8/10
+ Node.js: 8/10
+ Express.js: 8/10
+ MongoDB: 8/10
+ Python: 7/10
+ FastAPI: 7/10
+ RAG Pipeline Implementation: 8/10
+ Data Structures & Algorithms: 7/10
+ HTML/CSS: 8/10
+ CLOUD & DEVOPS EXPERIENCE
+ I have theoretical knowledge of AWS and Docker.
+ I have not deployed production projects using AWS or Docker yet.
+ RAG PIPELINE EXPERIENCE
+ I have built and deployed RAG-based projects.
+ My implementations use ChromaDB, Hugging Face embeddings, FastAPI/Node.js backends, and
+ LLMs like Gemini, OpenAI, and Groq.
+ I understand chunking strategies, embeddings, vector search, and retrieval logic.
+ NOTE FOR RAG
+All answers generated from my RAG system should strictly use only the information provided in this
+ document
