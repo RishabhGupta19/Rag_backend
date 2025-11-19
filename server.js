@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { initializeRag } from "./dist/Rag.js";   // ⬅️ Make sure Rag.js exists (compiled from Rag.ts)
+import { initializeRag } from "./dist/Rag.js";   //  Make sure Rag.js exists (compiled from Rag.ts)
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -23,10 +23,10 @@ console.log("⏳ Loading RAG pipeline in background...");
   try {
     RAG_CHAIN = await initializeRag();
     LOADING_STATUS = "loaded";
-    console.log("✅ RAG Pipeline Loaded Successfully");
+    console.log(" RAG Pipeline Loaded Successfully");
   } catch (err) {
     LOADING_STATUS = "failed";
-    console.error("❌ RAG Pipeline Failed to Initialize:", err);
+    console.error(" RAG Pipeline Failed to Initialize:", err);
   }
 })();
 
@@ -52,9 +52,9 @@ app.get("/status", (req, res) => {
   });
 });
 
-// ----------------------------------------------
+
 // POST /query → Ask the RAG Chain a question
-// ----------------------------------------------
+
 app.post("/query", async (req, res) => {
   try {
     if (LOADING_STATUS === "loading")
@@ -70,7 +70,7 @@ app.post("/query", async (req, res) => {
     if (!question)
       return res.status(400).json({ error: "Missing 'question' in body" });
 
-    console.log("📥 Incoming Query:", question);
+    console.log(" Incoming Query:", question);
 
     let result;
 
@@ -101,7 +101,7 @@ app.post("/query", async (req, res) => {
     return res.json({ answer, sources });
 
   } catch (err) {
-    console.error("❌ Error during query:", err);
+    console.error(" Error during query:", err);
     return res.status(500).json({ error: "Internal RAG error: " + err.message });
   }
 });
@@ -109,5 +109,5 @@ app.post("/query", async (req, res) => {
 // -------------------- START SERVER --------------------
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
-  console.log(`🔥 RAG API running at http://localhost:${PORT}`);
+  console.log(` RAG API running at http://localhost:${PORT}`);
 });
