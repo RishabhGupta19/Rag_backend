@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "start": "tsx server.ts",
+    "start": "npx tsx server.ts",
     "build": "echo 'No build required'"
   },
   "dependencies": {
@@ -19,6 +19,7 @@
     "express": "^5.1.0",
     "pdf-parse": "^1.1.2",
     "tsx": "^4.19.1",
+    "npx": "^10.2.2",
     "langchain": "^0.3.6"
   },
   "devDependencies": {
